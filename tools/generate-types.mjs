@@ -4,14 +4,14 @@
 // Default source: https://api.invoicexml.com/v1/openapi
 //
 // Only the schemas this package exposes are kept (the EN 16931 InvoiceDocument
-// model and the create options); paths are dropped, so the generated file
-// carries no endpoint the package does not wrap.
+// model, the create options, the validation verdict and the error body); paths
+// are dropped, so the generated file carries no endpoint the package does not wrap.
 import { readFile, writeFile } from "node:fs/promises";
 import openapiTS, { astToString } from "openapi-typescript";
 
 const source = process.argv[2] ?? "https://api.invoicexml.com/v1/openapi";
 const target = new URL("../src/generated/openapi.ts", import.meta.url);
-const roots = ["InvoiceDocument", "InvoiceOptions"];
+const roots = ["InvoiceDocument", "InvoiceOptions", "ValidationResponse", "ApiProblemDetails"];
 
 const spec = JSON.parse(
   /^https?:/.test(source)
@@ -44,6 +44,13 @@ for (const property of Object.values(schemas.InvoiceOptions?.properties ?? {})) 
   delete property.description;
   for (const variant of property.oneOf ?? []) delete variant.description;
 }
+
+// These descriptions cover endpoints outside this package or server internals;
+// the package documents the same types on its own exports.
+delete schemas.InvoiceOptions?.description;
+delete schemas.ValidationResponse?.description;
+delete schemas.ApiProblemDetails?.description;
+delete schemas.ApiProblemDetails?.properties?.invoiceData?.description;
 
 const pruned = {
   openapi: spec.openapi,

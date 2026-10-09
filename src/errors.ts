@@ -1,4 +1,4 @@
-import type { Finding } from "./types.js";
+import type { Finding, ProblemDetails } from "./types.js";
 
 /**
  * Thrown when the API answers with an error status. When a create or embed
@@ -14,11 +14,13 @@ export class InvoiceXmlError extends Error {
   readonly errorCode: number | null;
   readonly errors: Finding[];
   readonly warnings: Finding[];
-  /** The decoded response body. */
-  readonly body: unknown;
+  /** Correlation id of the request, to quote when contacting support. */
+  readonly traceId: string | null;
+  /** The decoded response body: a problem details object, or the raw text when the body was not JSON. */
+  readonly body: ProblemDetails | string;
 
-  constructor(status: number, body: unknown) {
-    const problem = (body && typeof body === "object" ? body : {}) as Record<string, unknown>;
+  constructor(status: number, body: ProblemDetails | string) {
+    const problem: ProblemDetails = body && typeof body === "object" ? body : {};
     const title = typeof problem.title === "string" ? problem.title : null;
     const detail =
       typeof problem.detail === "string" ? problem.detail : typeof body === "string" && body ? body : null;
@@ -30,9 +32,11 @@ export class InvoiceXmlError extends Error {
     this.status = status;
     this.title = title;
     this.detail = detail;
-    this.errorCode = typeof problem.errorCode === "number" ? problem.errorCode : null;
-    this.errors = Array.isArray(problem.errors) ? (problem.errors as Finding[]) : [];
-    this.warnings = Array.isArray(problem.warnings) ? (problem.warnings as Finding[]) : [];
+    const code = Number(problem.errorCode);
+    this.errorCode = problem.errorCode != null && Number.isInteger(code) ? code : null;
+    this.errors = Array.isArray(problem.errors) ? problem.errors : [];
+    this.warnings = Array.isArray(problem.warnings) ? problem.warnings : [];
+    this.traceId = typeof problem.traceId === "string" ? problem.traceId : null;
     this.body = body;
   }
 }
@@ -45,7 +49,7 @@ export class TooManyRequestsError extends InvoiceXmlError {
   /** Seconds to wait before retrying, from the Retry-After header. */
   readonly retryAfter: number;
 
-  constructor(body: unknown, retryAfter: number) {
+  constructor(body: ProblemDetails | string, retryAfter: number) {
     super(429, body);
     this.name = "TooManyRequestsError";
     this.retryAfter = retryAfter;

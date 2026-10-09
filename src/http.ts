@@ -1,5 +1,5 @@
 import { InvoiceXmlError, TooManyRequestsError } from "./errors.js";
-import type { FileInput } from "./types.js";
+import type { FileInput, ProblemDetails } from "./types.js";
 
 export interface ClientOptions {
   /** API key from https://invoicexml.com/account. */
@@ -82,9 +82,10 @@ export class Http {
       if (response.ok) return response;
 
       const text = await response.text();
-      let parsed: unknown = text;
+      let parsed: ProblemDetails | string = text;
       try {
-        parsed = JSON.parse(text);
+        const json: unknown = JSON.parse(text);
+        if (json && typeof json === "object" && !Array.isArray(json)) parsed = json as ProblemDetails;
       } catch {
         // Not JSON: keep the text.
       }

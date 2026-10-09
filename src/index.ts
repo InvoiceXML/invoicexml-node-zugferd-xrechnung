@@ -8,6 +8,7 @@ export type {
   Finding,
   InvoiceDocument,
   Language,
+  ProblemDetails,
   RenderOptions,
   ReportFinding,
   ReportRow,

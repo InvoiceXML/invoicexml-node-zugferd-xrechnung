@@ -59,7 +59,7 @@ The `InvoiceDocument` type is generated from the [OpenAPI schema](https://api.in
 
 ### Create options
 
-`createZugferd` accepts `language` (`"en"`, `"de"` or `"fr"`), `brandColor` (`"#RRGGBB"`), `logoUrl`, `pdfUrl` (your own PDF as the visual layer) and `includeAdvancedProperties`.
+`createZugferd` accepts `language` (`"EN"`, `"DE"` or `"FR"`), `brandColor` (`"#RRGGBB"`), `logoUrl`, `pdfUrl` (your own PDF as the visual layer) and `includeAdvancedProperties`.
 
 `createXRechnung` accepts `syntax` (`"ubl"`, the default, or `"cii"`) and `language`.
 
@@ -100,7 +100,7 @@ if (!result.valid) {
 
 ### Errors and rate limits
 
-Failed requests throw an `InvoiceXmlError` with `status`, `title`, `detail` and a numeric `errorCode` ([error codes](https://invoicexml.com/docs/error-handling)). When a create or embed request is refused because the invoice would not be compliant, `errors` lists the violated rules:
+Failed requests throw an `InvoiceXmlError` with `status`, `title`, `detail`, a numeric `errorCode` ([error codes](https://invoicexml.com/docs/error-handling)) and a `traceId` to quote when contacting support. When a create or embed request is refused because the invoice would not be compliant, `errors` lists the violated rules:
 
 ```ts
 import { InvoiceXmlError } from "@invoicexml/zugferd-xrechnung";

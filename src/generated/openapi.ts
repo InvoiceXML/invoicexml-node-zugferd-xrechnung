@@ -16,6 +16,37 @@ export interface components {
             reference?: null | string;
             schemeId?: null | string;
         };
+        ApiProblemDetails: {
+            data?: null | components["schemas"]["ValidationProblemData"];
+            detail?: null | string;
+            /**
+             * Format: int32
+             * @description Stable numeric error code to branch on; see `x-error-codes` on the document root.
+             */
+            errorCode?: number | string;
+            /**
+             * @description Fatal findings on validation failures: EN 16931 / profile rule violations of the
+             *     generated XML (4001), request model errors (4002), or a single finding naming the
+             *     fault (4015, 4017, 4018). Error code 4006 (no embedded XML, legacy shape) carries an
+             *     object here instead: `{ "xml": [string], "friendly": [finding] }`.
+             */
+            errors?: null | components["schemas"]["ValidationFinding"][];
+            instance?: null | string;
+            invoiceData?: null | components["schemas"]["InvoiceDocument"];
+            /** Format: int32 */
+            status?: null | number | string;
+            title?: null | string;
+            /** @description Correlation id of the request, to quote when contacting support. Present on most responses. */
+            traceId?: null | string;
+            type?: null | string;
+            /**
+             * @description Always `false` when present. Set on validation failures (error codes 4001, 4002,
+             *     4006, 4015, 4017, 4018) so the body can be handled like a validate verdict.
+             */
+            valid?: null | boolean;
+            /** @description Non-blocking findings collected during the same validation run (4001 and 4002 only). */
+            warnings?: null | components["schemas"]["ValidationFinding"][];
+        };
         BuyerContact: {
             email?: null | string;
             name?: null | string;
@@ -52,8 +83,10 @@ export interface components {
             line3?: null | string;
             postCode?: null | string;
         };
-        CountryCode: string;
-        CurrencyCode: string;
+        /** @enum {string} */
+        CountryCode: "AD" | "AE" | "AF" | "AG" | "AI" | "AL" | "AM" | "AO" | "AQ" | "AR" | "AS" | "AT" | "AU" | "AW" | "AX" | "AZ" | "BA" | "BB" | "BD" | "BE" | "BF" | "BG" | "BH" | "BI" | "BJ" | "BL" | "BM" | "BN" | "BO" | "BQ" | "BR" | "BS" | "BT" | "BV" | "BW" | "BY" | "BZ" | "CA" | "CC" | "CD" | "CF" | "CG" | "CH" | "CI" | "CK" | "CL" | "CM" | "CN" | "CO" | "CR" | "CU" | "CV" | "CW" | "CX" | "CY" | "CZ" | "DE" | "DJ" | "DK" | "DM" | "DO" | "DZ" | "EC" | "EE" | "EG" | "EH" | "ER" | "ES" | "ET" | "FI" | "FJ" | "FK" | "FM" | "FO" | "FR" | "GA" | "GB" | "GD" | "GE" | "GF" | "GG" | "GH" | "GI" | "GL" | "GM" | "GN" | "GP" | "GQ" | "GR" | "GS" | "GT" | "GU" | "GW" | "GY" | "HK" | "HM" | "HN" | "HR" | "HT" | "HU" | "ID" | "IE" | "IL" | "IM" | "IN" | "IO" | "IQ" | "IR" | "IS" | "IT" | "JE" | "JM" | "JO" | "JP" | "KE" | "KG" | "KH" | "KI" | "KM" | "KN" | "KP" | "KR" | "KW" | "KY" | "KZ" | "LA" | "LB" | "LC" | "LI" | "LK" | "LR" | "LS" | "LT" | "LU" | "LV" | "LY" | "MA" | "MC" | "MD" | "ME" | "MF" | "MG" | "MH" | "MK" | "ML" | "MM" | "MN" | "MO" | "MP" | "MQ" | "MR" | "MS" | "MT" | "MU" | "MV" | "MW" | "MX" | "MY" | "MZ" | "NA" | "NC" | "NE" | "NF" | "NG" | "NI" | "NL" | "NO" | "NP" | "NR" | "NU" | "NZ" | "OM" | "PA" | "PE" | "PF" | "PG" | "PH" | "PK" | "PL" | "PM" | "PN" | "PR" | "PS" | "PT" | "PW" | "PY" | "QA" | "RE" | "RO" | "RS" | "RU" | "RW" | "SA" | "SB" | "SC" | "SD" | "SE" | "SG" | "SH" | "SI" | "SJ" | "SK" | "SL" | "SM" | "SN" | "SO" | "SR" | "SS" | "ST" | "SV" | "SX" | "SY" | "SZ" | "TC" | "TD" | "TF" | "TG" | "TH" | "TJ" | "TK" | "TL" | "TM" | "TN" | "TO" | "TR" | "TT" | "TV" | "TW" | "TZ" | "UA" | "UG" | "UM" | "US" | "UY" | "UZ" | "VA" | "VC" | "VE" | "VG" | "VI" | "VN" | "VU" | "WF" | "WS" | "YE" | "YT" | "ZA" | "ZM" | "ZW";
+        /** @enum {string} */
+        CurrencyCode: "EUR" | "AED" | "AFN" | "ALL" | "AMD" | "ANG" | "AOA" | "ARS" | "AUD" | "AWG" | "AZN" | "BAM" | "BBD" | "BDT" | "BGN" | "BHD" | "BIF" | "BMD" | "BND" | "BOB" | "BRL" | "BSD" | "BTN" | "BWP" | "BYN" | "BZD" | "CAD" | "CDF" | "CHF" | "CLP" | "CNY" | "COP" | "CRC" | "CUP" | "CVE" | "CZK" | "DJF" | "DKK" | "DOP" | "DZD" | "EGP" | "ERN" | "ETB" | "FJD" | "FKP" | "GBP" | "GEL" | "GHS" | "GIP" | "GMD" | "GNF" | "GTQ" | "GYD" | "HKD" | "HNL" | "HTG" | "HUF" | "IDR" | "ILS" | "INR" | "IQD" | "IRR" | "ISK" | "JMD" | "JOD" | "JPY" | "KES" | "KGS" | "KHR" | "KMF" | "KPW" | "KRW" | "KWD" | "KYD" | "KZT" | "LAK" | "LBP" | "LKR" | "LRD" | "LSL" | "LYD" | "MAD" | "MDL" | "MGA" | "MKD" | "MMK" | "MNT" | "MOP" | "MRU" | "MUR" | "MVR" | "MWK" | "MXN" | "MYR" | "MZN" | "NAD" | "NGN" | "NIO" | "NOK" | "NPR" | "NZD" | "OMR" | "PAB" | "PEN" | "PGK" | "PHP" | "PKR" | "PLN" | "PYG" | "QAR" | "RON" | "RSD" | "RUB" | "RWF" | "SAR" | "SBD" | "SCR" | "SDG" | "SEK" | "SGD" | "SHP" | "SLE" | "SOS" | "SRD" | "SSP" | "STN" | "SVC" | "SYP" | "SZL" | "THB" | "TJS" | "TMT" | "TND" | "TOP" | "TRY" | "TTD" | "TWD" | "TZS" | "UAH" | "UGX" | "USD" | "UYU" | "UZS" | "VED" | "VES" | "VND" | "VUV" | "WST" | "XAF" | "XCD" | "XOF" | "XPF" | "YER" | "ZAR" | "ZMW" | "ZWG";
         DeliveryInformation: {
             /** Format: date */
             actualDeliveryDate?: null | string;
@@ -171,12 +204,6 @@ export interface components {
             /** Format: date */
             startDate?: null | string;
         };
-        /**
-         * @description Non-BT processing options that travel alongside an invoice in
-         *     CreateInvoiceRequest. Extend this type to add new
-         *     customisation knobs without touching `InvoiceDocument` or any
-         *     controller signature.
-         */
         InvoiceOptions: {
             brandColor?: null | string;
             includeAdvancedProperties?: null | boolean;
@@ -187,7 +214,22 @@ export interface components {
             rules?: null | string[];
             syntax?: null | string;
         };
-        InvoiceTypeCode: string;
+        InvoiceReportFinding: {
+            message: string;
+            rule: string;
+        };
+        InvoiceReportRow: {
+            code: string;
+            errors: components["schemas"]["InvoiceReportFinding"][];
+            isValid: boolean;
+            name: string;
+            path: string;
+            section: string;
+            value: null | string;
+            warnings: components["schemas"]["InvoiceReportFinding"][];
+        };
+        /** @enum {string} */
+        InvoiceTypeCode: "326" | "380" | "381" | "383" | "384" | "386" | "389" | "875" | "876" | "877";
         InvoicingPeriod: {
             /** Format: date */
             endDate?: null | string;
@@ -256,7 +298,8 @@ export interface components {
             paymentTerms?: null | string;
             remittanceInformation?: null | string;
         };
-        PdfLanguage: string;
+        /** @enum {string} */
+        PdfLanguage: "EN" | "DE" | "FR";
         PrecedingInvoiceReference: {
             /** Format: date */
             issueDate?: null | string;
@@ -311,6 +354,66 @@ export interface components {
             line3?: null | string;
             postCode?: null | string;
         };
+        /**
+         * @description One self-contained finding, as listed in the `errors` and `warnings` arrays of
+         *     the validate verdict and of the 400 problem responses (error codes 4001 and 4002).
+         */
+        ValidationFinding: {
+            /** @description EN 16931 Business Terms involved (for example `BT-31`). Empty when the rule maps to none. */
+            btCodes: string[];
+            /** @description Dotted paths into the invoice JSON model (for example `seller.vatIdentifier`, `lines[0].quantity`). Empty when the rule maps to none. */
+            fields: string[];
+            /** @description Validation layer the finding came from: `xsd`, `en16931` or `cius`. `null` for findings outside the XML validation pipeline. */
+            layer: null | string;
+            /**
+             * Format: int32
+             * @description 1-based invoice line the finding refers to, or `null` for document-level findings.
+             */
+            line: null | number | string;
+            /** @description Human-readable explanation of the finding. */
+            message: string;
+            /** @description The validator's verbatim output line for the finding. `null` when there is none. */
+            raw: null | string;
+            /** @description Identifier of the rule that fired (for example `BR-CO-15`, `PEPPOL-EN16931-R010`, `PDF-EMBED`). `null` for request model validation findings. */
+            rule: null | string;
+        };
+        /** @description The `data` block of a 4001 problem response. */
+        ValidationProblemData: {
+            /** @description The standard validated against: `EN16931`, `UBL 2.1` or `XRechnung`. */
+            conformanceLevel: string;
+        };
+        ValidationResponse: {
+            /** @description What was validated and the outcome per layer. */
+            data: components["schemas"]["ValidationResponseData"];
+            /** @description One sentence summarising the verdict. */
+            detail: string;
+            /** @description Fatal findings. Empty when Valid is `true`. */
+            errors: components["schemas"]["ValidationFinding"][];
+            /** @description The invoice's Business Terms (BT-x) with their values and the findings attached to each, for field-level display. `null` when the document could not be parsed into the invoice model; absent on `/v1/validate/order-x`. */
+            report: null | components["schemas"]["InvoiceReportRow"][];
+            /** @description `true` when the document passed every fatal rule. */
+            valid: boolean;
+            /** @description Non-blocking findings (Schematron warnings and advisories such as an unrecognised profile). Never affect the verdict. */
+            warnings: components["schemas"]["ValidationFinding"][];
+        };
+        /**
+         * @description Outcome per validation layer plus the profile the document was checked against.
+         *     Which fields are present depends on the endpoint and on how far validation got.
+         */
+        ValidationResponseData: {
+            /** @description The standard validated against: `EN16931`, `UBL 2.1`, `XRechnung` or `Order-X`. */
+            conformanceLevel: null | string;
+            /** @description The specification identifier (BT-24) the document declares, verbatim. */
+            customizationId: null | string;
+            /** @description Hybrid PDF endpoints only (`facturx`, `zugferd`, `order-x`): whether the PDF carried an invoice XML attachment. */
+            hasEmbeddedXml: null | boolean;
+            /** @description Slug of the profile whose rule set ran (for example `peppol-bis-3`, `xrechnung`, `facturx-basic`). `null` when the document declares no profile this validator has dedicated rules for. */
+            profile: null | string;
+            /** @description Whether the XML passed the EN 16931 and profile (CIUS) business rules. */
+            schematronValid: null | boolean;
+            /** @description Whether the XML passed the XSD schema layer. */
+            schemaValid: null | boolean;
+        };
         VatBreakdown: {
             categoryCode?: null | components["schemas"]["VatCategoryCode"];
             exemptionReasonCode?: null | string;
@@ -322,7 +425,8 @@ export interface components {
             /** Format: double */
             taxAmount?: null | number | string;
         };
-        VatCategoryCode: string;
+        /** @enum {string} */
+        VatCategoryCode: "S" | "Z" | "E" | "AE" | "K" | "G" | "O" | "L" | "M";
     };
     responses: never;
     parameters: never;

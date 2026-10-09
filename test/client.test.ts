@@ -80,7 +80,7 @@ describe("construction", () => {
 describe("create", () => {
   it("posts the invoice envelope with bearer auth and returns the PDF bytes", async () => {
     const { fetch, calls } = mockFetch(new Response(PDF, { headers: { "Content-Type": "application/pdf" } }));
-    const pdf = await client(fetch).createZugferd(invoice, { language: "de", brandColor: "#0F766E" });
+    const pdf = await client(fetch).createZugferd(invoice, { language: "DE", brandColor: "#0F766E" });
 
     expect(pdf).toBeInstanceOf(Uint8Array);
     expect(Array.from(pdf)).toEqual(Array.from(PDF));
@@ -92,7 +92,7 @@ describe("create", () => {
     expect(headers(call)["User-Agent"]).toBe(`invoicexml-node-zugferd-xrechnung/${VERSION}`);
     expect(JSON.parse(call.init.body as string)).toEqual({
       invoice,
-      options: { language: "de", brandColor: "#0F766E" },
+      options: { language: "DE", brandColor: "#0F766E" },
     });
   });
 
@@ -132,6 +132,15 @@ describe("create", () => {
     expect(e.errors[0]!.rule).toBe("BR-DE-15");
     expect(e.errors[0]!.fields).toEqual(["buyerReference"]);
     expect(e.message).toBe("InvoiceXML API error 400: Invoice validation failed (The invoice violates 1 rule.)");
+  });
+
+  it("reads a string errorCode and the traceId, and ignores a non-array errors member", async () => {
+    const problem = { title: "No embedded XML", status: 400, errorCode: "4006", traceId: "00-abc-01", errors: { xml: ["missing"] } };
+    const { fetch } = mockFetch(jsonResponse(problem, 400));
+    const e = (await client(fetch).createZugferd(invoice).catch((x: unknown) => x)) as InvoiceXmlError;
+    expect(e.errorCode).toBe(4006);
+    expect(e.traceId).toBe("00-abc-01");
+    expect(e.errors).toEqual([]);
   });
 
   it("maps a non-JSON error body to the detail", async () => {
@@ -208,12 +217,12 @@ describe("uploads", () => {
 
   it("renders XRechnung to PDF with language and logo fields", async () => {
     const { fetch, calls } = mockFetch(new Response(PDF));
-    const pdf = await client(fetch).renderXRechnungToPdf(XML, { language: "de", logoUrl: "https://example.com/logo.png" });
+    const pdf = await client(fetch).renderXRechnungToPdf(XML, { language: "DE", logoUrl: "https://example.com/logo.png" });
 
     expect(pdf.byteLength).toBe(PDF.byteLength);
     const body = form(calls[0]!);
     expect(calls[0]!.url).toBe("https://api.invoicexml.com/v1/render/xrechnung/to/pdf");
-    expect(body.get("language")).toBe("de");
+    expect(body.get("language")).toBe("DE");
     expect(body.get("logoUrl")).toBe("https://example.com/logo.png");
   });
 
