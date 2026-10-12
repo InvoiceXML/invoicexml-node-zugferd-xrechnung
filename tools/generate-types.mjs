@@ -55,6 +55,14 @@ const dropBtDocs = (node) => {
 };
 dropBtDocs(schemas);
 
+// Example values from other formats (Peppol rule ids and profiles) are left out of the docs.
+const dropOtherFormats = (node) => {
+  if (!node || typeof node !== "object") return;
+  if (typeof node.description === "string") node.description = node.description.replace(/`[^`]*peppol[^`]*`,\s*/gi, "");
+  Object.values(node).forEach(dropOtherFormats);
+};
+dropOtherFormats(schemas);
+
 // These descriptions cover endpoints outside this package or server internals;
 // the package documents the same types on its own exports.
 delete schemas.InvoiceOptions?.description;
@@ -75,8 +83,8 @@ const header =
   "// Do not edit by hand. Run `npm run generate` to refresh.\n\n";
 const output = header + astToString(ast);
 
-// Guard: the published types carry no business term codes and no em dashes.
-for (const [label, pattern] of [["business term code", /\bB[TG]-\d/], ["em dash", new RegExp(String.fromCharCode(0x2014))]]) {
+// Guard: the published types carry no business term codes, no other formats and no em dashes.
+for (const [label, pattern] of [["business term code", /\bB[TG]-\d/], ["Peppol mention", /peppol/i], ["em dash", new RegExp(String.fromCharCode(0x2014))]]) {
   const hit = output.match(new RegExp(`.*${pattern.source}.*`));
   if (hit) throw new Error(`Generated types contain a ${label}: ${hit[0].trim()}`);
 }

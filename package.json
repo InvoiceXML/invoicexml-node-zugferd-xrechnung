@@ -21,7 +21,7 @@
     "rechnung",
     "typescript"
   ],
-  "homepage": "https://invoicexml.com",
+  "homepage": "https://www.invoicexml.com",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/InvoiceXML/invoicexml-node-zugferd-xrechnung.git"

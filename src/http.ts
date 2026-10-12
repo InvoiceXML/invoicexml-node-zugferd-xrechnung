@@ -2,7 +2,7 @@ import { InvoiceXmlError, TooManyRequestsError } from "./errors.js";
 import type { FileInput, ProblemDetails } from "./types.js";
 
 export interface ClientOptions {
-  /** API key from https://invoicexml.com/account. */
+  /** API key from https://www.invoicexml.com/account/authentication. */
   apiKey: string;
   /** Defaults to https://api.invoicexml.com. */
   baseUrl?: string;
@@ -45,7 +45,7 @@ export class Http {
   async postFiles(
     path: string,
     files: Record<string, FileInput>,
-    fields: Record<string, string | boolean | undefined> = {},
+    fields: Record<string, string | boolean | readonly string[] | undefined> = {},
   ): Promise<Response> {
     const form = new FormData();
     for (const [name, input] of Object.entries(files)) {
@@ -53,7 +53,8 @@ export class Http {
       form.append(name, blob, filename);
     }
     for (const [name, value] of Object.entries(fields)) {
-      if (value !== undefined) form.append(name, String(value));
+      if (Array.isArray(value)) for (const item of value) form.append(name, item);
+      else if (value !== undefined) form.append(name, String(value));
     }
     return this.send(path, form);
   }

@@ -4,7 +4,7 @@
 [![tests](https://github.com/InvoiceXML/invoicexml-node-zugferd-xrechnung/actions/workflows/tests.yml/badge.svg)](https://github.com/InvoiceXML/invoicexml-node-zugferd-xrechnung/actions/workflows/tests.yml)
 [![license](https://img.shields.io/npm/l/@invoicexml/zugferd-xrechnung)](LICENSE)
 
-Create, validate, embed, render and extract German e-invoices from Node.js and TypeScript: **ZUGFeRD** hybrid PDF/A-3 for B2B and **XRechnung** XML for the public sector, both EN 16931 compliant. A thin, typed client for the [InvoiceXML API](https://invoicexml.com) with zero runtime dependencies.
+Create, validate, embed, render and extract German e-invoices from Node.js and TypeScript: **ZUGFeRD** hybrid PDF/A-3 for B2B and **XRechnung** XML for the public sector, both EN 16931 compliant. A thin, typed client for the [InvoiceXML API](https://www.invoicexml.com) with zero runtime dependencies.
 
 ```bash
 npm install @invoicexml/zugferd-xrechnung
@@ -30,7 +30,7 @@ const invoice: InvoiceDocument = {
 await writeFile("rechnung.pdf", await client.createZugferd(invoice));
 ```
 
-You send net prices, quantities and VAT rates. The API computes the totals and the VAT breakdown, builds the CII XML, embeds it in a PDF/A-3 and validates the result against the official rules before returning it. Get an API key with the [30-day free trial](https://invoicexml.com/account/signup): 100 credits, no credit card.
+You send net prices, quantities and VAT rates. The API computes the totals and the VAT breakdown, builds the CII XML, embeds it in a PDF/A-3 and validates the result against the official rules before returning it. Get an API key with the [30-day free trial](https://www.invoicexml.com/account/signup): 100 credits, no credit card.
 
 ## Why InvoiceXML
 
@@ -101,7 +101,7 @@ if (!result.valid) {
 
 ### Errors and rate limits
 
-Failed requests throw an `InvoiceXmlError` with `status`, `title`, `detail`, a numeric `errorCode` ([error codes](https://invoicexml.com/docs/error-handling)) and a `traceId` to quote when contacting support. When a create or embed request is refused because the invoice would not be compliant, `errors` lists the violated rules:
+Failed requests throw an `InvoiceXmlError` with `status`, `title`, `detail`, a numeric `errorCode` ([error codes](https://www.invoicexml.com/docs/error-handling)) and a `traceId` to quote when contacting support. When a create or embed request is refused because the invoice would not be compliant, `errors` lists the violated rules:
 
 ```ts
 import { InvoiceXmlError } from "@invoicexml/zugferd-xrechnung";
@@ -132,10 +132,10 @@ Keep the API key on the server. Never call the API from browser code, where the 
 
 ## Links
 
-- [Documentation](https://invoicexml.com/docs)
+- [Documentation](https://www.invoicexml.com/docs)
 - [API explorer](https://api.invoicexml.com/v1/scalar/)
-- [ZUGFeRD and XRechnung in Node.js, full guide](https://invoicexml.com/blog/zugferd-xrechnung-nodejs)
-- [Pricing](https://invoicexml.com/pricing)
+- [ZUGFeRD and XRechnung in Node.js, full guide](https://www.invoicexml.com/blog/zugferd-xrechnung-nodejs)
+- [Pricing](https://www.invoicexml.com/pricing)
 
 ## License
 

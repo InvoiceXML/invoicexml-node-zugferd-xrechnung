@@ -374,7 +374,7 @@ export interface components {
             message: string;
             /** @description The validator's verbatim output line for the finding. `null` when there is none. */
             raw: null | string;
-            /** @description Identifier of the rule that fired (for example `BR-CO-15`, `PEPPOL-EN16931-R010`, `PDF-EMBED`). `null` for request model validation findings. */
+            /** @description Identifier of the rule that fired (for example `BR-CO-15`, `PDF-EMBED`). `null` for request model validation findings. */
             rule: null | string;
         } & {
             [key: string]: unknown;
@@ -411,8 +411,7 @@ export interface components {
              */
             hasEmbeddedXml?: null | boolean;
             /**
-             * @description Slug of the profile whose rule set ran (for example `peppol-bis-3`,
-             *     `xrechnung`, `facturx-basic`). `null` when the document declares no
+             * @description Slug of the profile whose rule set ran (for example `xrechnung`, `facturx-basic`). `null` when the document declares no
              *     profile this validator has dedicated rules for.
              */
             profile?: null | string;

@@ -4,7 +4,7 @@ import type { Finding, ProblemDetails } from "./types.js";
  * Thrown when the API answers with an error status. When a create or embed
  * request is refused because the invoice would not be compliant (HTTP 400),
  * `errors` lists the violated rules.
- * Error codes: https://invoicexml.com/docs/error-handling
+ * Error codes: https://www.invoicexml.com/docs/error-handling
  */
 export class InvoiceXmlError extends Error {
   readonly status: number;
