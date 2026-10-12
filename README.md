@@ -83,7 +83,7 @@ const xml = await client.createXRechnung({
     postalAddress: { line1: "Frankfurter Allee 35", city: "Berlin", postCode: "10247", country: "DE" },
     electronicAddress: { identifier: "11302-00567-22", schemeId: "0204" },
   },
-  paymentDetails: { paymentMeansCode: 58, paymentAccountIdentifier: "DE02120300000000202051" },
+  paymentDetails: { paymentMeansCode: "58", paymentAccountIdentifier: "DE02120300000000202051" },
   lines: [{ quantity: 95, unitCode: "HUR", item: { name: "Softwareentwicklung Fachverfahren" }, priceDetails: { netPrice: 110 }, vatInformation: { rate: 19, categoryCode: "S" } }],
 }, { syntax: "cii" });
 ```
