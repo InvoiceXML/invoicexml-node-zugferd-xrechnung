@@ -162,7 +162,7 @@ describe("uploads", () => {
     valid: false,
     detail: "1 error.",
     data: { profile: "xrechnung" },
-    errors: [{ rule: "BR-DE-15", layer: "cius", line: 3, message: "Leitweg-ID missing.", btCodes: ["BT-10"], fields: ["buyerReference"] }],
+    errors: [{ rule: "BR-DE-15", layer: "cius", line: 3, message: "Leitweg-ID missing.", fields: ["buyerReference"] }],
     warnings: [],
     report: [],
   };

@@ -219,7 +219,6 @@ export interface components {
             rule: string;
         };
         InvoiceReportRow: {
-            code: string;
             errors: components["schemas"]["InvoiceReportFinding"][];
             isValid: boolean;
             name: string;
@@ -227,6 +226,8 @@ export interface components {
             section: string;
             value: null | string;
             warnings: components["schemas"]["InvoiceReportFinding"][];
+        } & {
+            [key: string]: unknown;
         };
         /** @enum {string} */
         InvoiceTypeCode: "326" | "380" | "381" | "383" | "384" | "386" | "389" | "875" | "876" | "877";
@@ -360,8 +361,6 @@ export interface components {
          *     fields; the ones that do not apply are `null` or empty.
          */
         ValidationFinding: {
-            /** @description EN 16931 Business Terms involved (for example `BT-31`). Empty when the rule maps to none. */
-            btCodes: string[];
             /** @description Dotted paths into the invoice JSON model (for example `seller.vatIdentifier`, `lines[0].quantity`). Empty when the rule maps to none. */
             fields: string[];
             /** @description Validation layer the finding came from: `xsd`, `en16931` or `cius`. `null` for findings outside the XML validation pipeline. */
@@ -377,6 +376,8 @@ export interface components {
             raw: null | string;
             /** @description Identifier of the rule that fired (for example `BR-CO-15`, `PEPPOL-EN16931-R010`, `PDF-EMBED`). `null` for request model validation findings. */
             rule: null | string;
+        } & {
+            [key: string]: unknown;
         };
         /** @description The `data` block of a 4001 problem response. */
         ValidationProblemData: {
@@ -390,12 +391,6 @@ export interface components {
             detail: string;
             /** @description Fatal findings. Empty when Valid is `true`. */
             errors: components["schemas"]["ValidationFinding"][];
-            /**
-             * @description The invoice's Business Terms (BT-x) with their values and the findings attached to
-             *     each, for field-level display. `null` when the document could not be parsed into
-             *     the invoice model. Absent on `/v1/validate/order-x` and when no invoice XML could
-             *     be read (a PDF without an embedded XML, or one embedding the wrong syntax).
-             */
             report?: null | components["schemas"]["InvoiceReportRow"][];
             /** @description `true` when the document passed every fatal rule. */
             valid: boolean;
@@ -409,7 +404,6 @@ export interface components {
         ValidationResponseData: {
             /** @description The standard validated against: `EN16931`, `UBL 2.1`, `XRechnung` or `Order-X`. */
             conformanceLevel?: null | string;
-            /** @description The specification identifier (BT-24) the document declares, verbatim. */
             customizationId?: null | string;
             /**
              * @description Hybrid PDF endpoints only (`facturx`, `zugferd`, `order-x`): whether the

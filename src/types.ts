@@ -59,7 +59,7 @@ export type ValidationResult = Schemas["ValidationResponse"];
 /** One validation finding, from a validation result or from a rejected create or embed request. */
 export type Finding = Schemas["ValidationFinding"];
 
-/** One row of the field report: an EN 16931 business term with its value and findings. */
+/** One row of the field report: an invoice field with its value and its findings. */
 export type ReportRow = Schemas["InvoiceReportRow"];
 
 /** A finding attached to a row of the field report. */

@@ -71,6 +71,7 @@ XRechnung uses the same invoice shape. It also needs the Leitweg-ID in `buyerRef
 const xml = await client.createXRechnung({
   invoiceNumber: "RE-2026-1106", issueDate: "2026-07-28", dueDate: "2026-08-27", currency: "EUR",
   buyerReference: "11302-00567-22",
+  invoicingPeriod: { startDate: "2026-07-01", endDate: "2026-07-31" },
   seller: {
     name: "Spreewerk Solutions GmbH", vatIdentifier: "DE811234567",
     postalAddress: { line1: "Köpenicker Str. 154", city: "Berlin", postCode: "10997", country: "DE" },
@@ -89,7 +90,7 @@ const xml = await client.createXRechnung({
 
 ### Validation
 
-Valid and invalid documents both resolve normally, so check `valid`. Each finding carries the rule, its layer (`xsd`, `en16931` or `cius` for the German BR-DE rules), a plain-language message and the affected fields. `report` lists every business term with its value and findings.
+Valid and invalid documents both resolve normally, so check `valid`. Each finding carries the rule, its layer (`xsd`, `en16931` or `cius` for the German BR-DE rules), a plain-language message and the affected fields. `report` lists every invoice field with its value and its findings.
 
 ```ts
 const result = await client.validateXRechnung(await readFile("rechnung.xml"));
@@ -135,7 +136,6 @@ Keep the API key on the server. Never call the API from browser code, where the 
 - [API explorer](https://api.invoicexml.com/v1/scalar/)
 - [ZUGFeRD and XRechnung in Node.js, full guide](https://invoicexml.com/blog/zugferd-xrechnung-nodejs)
 - [Pricing](https://invoicexml.com/pricing)
-- Factur-X for France: [`@invoicexml/facturx`](https://www.npmjs.com/package/@invoicexml/facturx)
 
 ## License
 
