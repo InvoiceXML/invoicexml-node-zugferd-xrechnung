@@ -21,20 +21,20 @@ export interface components {
             detail?: null | string;
             /**
              * Format: int32
-             * @description Stable numeric error code to branch on; see `x-error-codes` on the document root.
+             * @description Stable numeric error code to branch on, present on every error response; see
+             *     `x-error-codes` on the document root.
              */
-            errorCode?: number | string;
+            errorCode: number;
             /**
              * @description Fatal findings on validation failures: EN 16931 / profile rule violations of the
              *     generated XML (4001), request model errors (4002), or a single finding naming the
-             *     fault (4015, 4017, 4018). Error code 4006 (no embedded XML, legacy shape) carries an
-             *     object here instead: `{ "xml": [string], "friendly": [finding] }`.
+             *     fault (4006, 4015, 4017, 4018).
              */
             errors?: null | components["schemas"]["ValidationFinding"][];
             instance?: null | string;
             invoiceData?: null | components["schemas"]["InvoiceDocument"];
             /** Format: int32 */
-            status?: null | number | string;
+            status?: null | number;
             title?: null | string;
             /** @description Correlation id of the request, to quote when contacting support. Present on most responses. */
             traceId?: null | string;
@@ -106,51 +106,51 @@ export interface components {
         };
         DocumentLevelAllowance: {
             /** Format: double */
-            amount?: null | number | string;
+            amount?: null | number;
             /** Format: double */
-            baseAmount?: null | number | string;
+            baseAmount?: null | number;
             /** Format: double */
-            percentage?: null | number | string;
+            percentage?: null | number;
             reason?: null | string;
             reasonCode?: null | string;
             vatCategoryCode?: null | components["schemas"]["VatCategoryCode"];
             /** Format: double */
-            vatRate?: null | number | string;
+            vatRate?: null | number;
         };
         DocumentLevelCharge: {
             /** Format: double */
-            amount?: null | number | string;
+            amount?: null | number;
             /** Format: double */
-            baseAmount?: null | number | string;
+            baseAmount?: null | number;
             /** Format: double */
-            percentage?: null | number | string;
+            percentage?: null | number;
             reason?: null | string;
             reasonCode?: null | string;
             vatCategoryCode?: null | components["schemas"]["VatCategoryCode"];
             /** Format: double */
-            vatRate?: null | number | string;
+            vatRate?: null | number;
         };
         DocumentTotals: {
             /** Format: double */
-            duePayableAmount?: null | number | string;
+            duePayableAmount?: null | number;
             /** Format: double */
-            grandTotalAmount?: null | number | string;
+            grandTotalAmount?: null | number;
             /** Format: double */
-            paidAmount?: null | number | string;
+            paidAmount?: null | number;
             /** Format: double */
-            roundingAmount?: null | number | string;
+            roundingAmount?: null | number;
             /** Format: double */
-            sumOfAllowances?: null | number | string;
+            sumOfAllowances?: null | number;
             /** Format: double */
-            sumOfCharges?: null | number | string;
+            sumOfCharges?: null | number;
             /** Format: double */
-            sumOfLineNetAmounts?: null | number | string;
+            sumOfLineNetAmounts?: null | number;
             /** Format: double */
-            taxBasisTotalAmount?: null | number | string;
+            taxBasisTotalAmount?: null | number;
             /** Format: double */
-            taxTotalAmount?: null | number | string;
+            taxTotalAmount?: null | number;
             /** Format: double */
-            taxTotalAmountInAccountingCurrency?: null | number | string;
+            taxTotalAmountInAccountingCurrency?: null | number;
         };
         InvoiceDocument: {
             allowances?: components["schemas"]["DocumentLevelAllowance"][];
@@ -188,13 +188,13 @@ export interface components {
             lineBuyerAccountingReference?: null | string;
             lineId?: null | string;
             /** Format: double */
-            lineNetAmount?: null | number | string;
+            lineNetAmount?: null | number;
             lineNote?: null | string;
             linePeriod?: null | components["schemas"]["InvoiceLinePeriod"];
             objectIdentifier?: null | components["schemas"]["LineObjectIdentifier"];
             priceDetails: null | components["schemas"]["PriceDetails"];
             /** Format: double */
-            quantity: null | number | string;
+            quantity: null | number;
             unitCode?: null | string;
             vatInformation: null | components["schemas"]["LineVatInformation"];
         };
@@ -261,21 +261,21 @@ export interface components {
         };
         LineAllowance: {
             /** Format: double */
-            amount?: null | number | string;
+            amount?: null | number;
             /** Format: double */
-            baseAmount?: null | number | string;
+            baseAmount?: null | number;
             /** Format: double */
-            percentage?: null | number | string;
+            percentage?: null | number;
             reason?: null | string;
             reasonCode?: null | string;
         };
         LineCharge: {
             /** Format: double */
-            amount?: null | number | string;
+            amount?: null | number;
             /** Format: double */
-            baseAmount?: null | number | string;
+            baseAmount?: null | number;
             /** Format: double */
-            percentage?: null | number | string;
+            percentage?: null | number;
             reason?: null | string;
             reasonCode?: null | string;
         };
@@ -286,7 +286,7 @@ export interface components {
         LineVatInformation: {
             categoryCode?: null | components["schemas"]["VatCategoryCode"];
             /** Format: double */
-            rate?: null | number | string;
+            rate?: null | number;
         };
         PaymentDetails: {
             bic?: null | string;
@@ -307,13 +307,13 @@ export interface components {
         };
         PriceDetails: {
             /** Format: double */
-            discountAmount?: null | number | string;
+            discountAmount?: null | number;
             /** Format: double */
-            grossPrice?: null | number | string;
+            grossPrice?: null | number;
             /** Format: double */
-            netPrice: null | number | string;
+            netPrice: null | number;
             /** Format: double */
-            priceBaseQuantity?: null | number | string;
+            priceBaseQuantity?: null | number;
             priceBaseUnit?: null | string;
         };
         SellerContact: {
@@ -356,7 +356,8 @@ export interface components {
         };
         /**
          * @description One self-contained finding, as listed in the `errors` and `warnings` arrays of
-         *     the validate verdict and of the 400 problem responses (error codes 4001 and 4002).
+         *     the validate verdict and of the 400 problem responses. Every finding carries all seven
+         *     fields; the ones that do not apply are `null` or empty.
          */
         ValidationFinding: {
             /** @description EN 16931 Business Terms involved (for example `BT-31`). Empty when the rule maps to none. */
@@ -369,7 +370,7 @@ export interface components {
              * Format: int32
              * @description 1-based invoice line the finding refers to, or `null` for document-level findings.
              */
-            line: null | number | string;
+            line: null | number;
             /** @description Human-readable explanation of the finding. */
             message: string;
             /** @description The validator's verbatim output line for the finding. `null` when there is none. */
@@ -389,8 +390,13 @@ export interface components {
             detail: string;
             /** @description Fatal findings. Empty when Valid is `true`. */
             errors: components["schemas"]["ValidationFinding"][];
-            /** @description The invoice's Business Terms (BT-x) with their values and the findings attached to each, for field-level display. `null` when the document could not be parsed into the invoice model; absent on `/v1/validate/order-x`. */
-            report: null | components["schemas"]["InvoiceReportRow"][];
+            /**
+             * @description The invoice's Business Terms (BT-x) with their values and the findings attached to
+             *     each, for field-level display. `null` when the document could not be parsed into
+             *     the invoice model. Absent on `/v1/validate/order-x` and when no invoice XML could
+             *     be read (a PDF without an embedded XML, or one embedding the wrong syntax).
+             */
+            report?: null | components["schemas"]["InvoiceReportRow"][];
             /** @description `true` when the document passed every fatal rule. */
             valid: boolean;
             /** @description Non-blocking findings (Schematron warnings and advisories such as an unrecognised profile). Never affect the verdict. */
@@ -402,28 +408,35 @@ export interface components {
          */
         ValidationResponseData: {
             /** @description The standard validated against: `EN16931`, `UBL 2.1`, `XRechnung` or `Order-X`. */
-            conformanceLevel: null | string;
+            conformanceLevel?: null | string;
             /** @description The specification identifier (BT-24) the document declares, verbatim. */
-            customizationId: null | string;
-            /** @description Hybrid PDF endpoints only (`facturx`, `zugferd`, `order-x`): whether the PDF carried an invoice XML attachment. */
-            hasEmbeddedXml: null | boolean;
-            /** @description Slug of the profile whose rule set ran (for example `peppol-bis-3`, `xrechnung`, `facturx-basic`). `null` when the document declares no profile this validator has dedicated rules for. */
-            profile: null | string;
+            customizationId?: null | string;
+            /**
+             * @description Hybrid PDF endpoints only (`facturx`, `zugferd`, `order-x`): whether the
+             *     PDF carried an invoice XML attachment. When `false`, no other field is present.
+             */
+            hasEmbeddedXml?: null | boolean;
+            /**
+             * @description Slug of the profile whose rule set ran (for example `peppol-bis-3`,
+             *     `xrechnung`, `facturx-basic`). `null` when the document declares no
+             *     profile this validator has dedicated rules for.
+             */
+            profile?: null | string;
             /** @description Whether the XML passed the EN 16931 and profile (CIUS) business rules. */
-            schematronValid: null | boolean;
+            schematronValid?: null | boolean;
             /** @description Whether the XML passed the XSD schema layer. */
-            schemaValid: null | boolean;
+            schemaValid?: null | boolean;
         };
         VatBreakdown: {
             categoryCode?: null | components["schemas"]["VatCategoryCode"];
             exemptionReasonCode?: null | string;
             exemptionReasonText?: null | string;
             /** Format: double */
-            rate?: null | number | string;
+            rate?: null | number;
             /** Format: double */
-            taxableAmount?: null | number | string;
+            taxableAmount?: null | number;
             /** Format: double */
-            taxAmount?: null | number | string;
+            taxAmount?: null | number;
         };
         /** @enum {string} */
         VatCategoryCode: "S" | "Z" | "E" | "AE" | "K" | "G" | "O" | "L" | "M";

@@ -31,13 +31,6 @@ roots.forEach(walk);
 
 const schemas = Object.fromEntries([...keep].sort().map((name) => [name, structuredClone(all[name])]));
 
-// Code lists (country, currency, VAT category, ...) are serialised as strings
-// by the API. Older spec revisions declared them as bare integers; type them as
-// strings until the spec carries the string enum values itself.
-for (const schema of Object.values(schemas)) {
-  if (schema.type === "integer" && !schema.enum && !schema.properties) schema.type = "string";
-}
-
 // Option descriptions are written for the whole API; this package documents
 // the options it supports on its own method signatures instead.
 for (const property of Object.values(schemas.InvoiceOptions?.properties ?? {})) {

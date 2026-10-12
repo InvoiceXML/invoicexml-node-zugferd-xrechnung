@@ -20,7 +20,7 @@ export class InvoiceXmlError extends Error {
   readonly body: ProblemDetails | string;
 
   constructor(status: number, body: ProblemDetails | string) {
-    const problem: ProblemDetails = body && typeof body === "object" ? body : {};
+    const problem: Partial<ProblemDetails> = body && typeof body === "object" ? body : {};
     const title = typeof problem.title === "string" ? problem.title : null;
     const detail =
       typeof problem.detail === "string" ? problem.detail : typeof body === "string" && body ? body : null;
