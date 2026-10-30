@@ -5,7 +5,9 @@ import {
   TooManyRequestsError,
   VERSION,
   ZugferdXRechnungClient,
+  type EmailMessage,
   type InvoiceDocument,
+  type RenderOptions,
 } from "../src/index.js";
 
 const invoice: InvoiceDocument = {
@@ -238,6 +240,179 @@ describe("uploads", () => {
       "https://api.invoicexml.com/v1/extract/json",
       "https://api.invoicexml.com/v1/extract/attachments",
     ]);
+  });
+});
+
+describe("email", () => {
+  const accepted = { status: "accepted", messageId: "msg-1" };
+  const required = { from: "rechnung@spreewerk-solutions.example", to: "buchhaltung@main-handel.example" };
+  const full = {
+    ...required,
+    fromName: "Spreewerk Solutions",
+    cc: ["archiv@spreewerk-solutions.example", "steuer@spreewerk-solutions.example"],
+    bcc: ["kopie@spreewerk-solutions.example"],
+    replyTo: "forderungen@spreewerk-solutions.example",
+    subject: "Rechnung RE-2026-1105",
+    message: "Guten Tag,\n\nanbei unsere Rechnung.",
+  };
+
+  it("posts the invoice envelope plus the email object and returns the message id", async () => {
+    const { fetch, calls } = mockFetch(jsonResponse(accepted));
+    const result = await client(fetch).emailZugferd(invoice, full, { language: "DE" });
+
+    expect(result).toEqual(accepted);
+    const call = calls[0]!;
+    expect(call.url).toBe("https://api.invoicexml.com/v1/create/zugferd/email");
+    expect(call.init.method).toBe("POST");
+    expect(headers(call).Authorization).toBe("Bearer test-key");
+    expect(headers(call)["Content-Type"]).toBe("application/json");
+    expect(JSON.parse(call.init.body as string)).toEqual({ invoice, options: { language: "DE" }, email: full });
+  });
+
+  it("omits options and unset email fields from the JSON body", async () => {
+    const { fetch, calls } = mockFetch(jsonResponse(accepted));
+    await client(fetch).emailZugferd(invoice, { ...required, subject: undefined, cc: undefined });
+    expect(JSON.parse(calls[0]!.init.body as string)).toEqual({ invoice, email: required });
+  });
+
+  it("sends XRechnung through its own route and passes the syntax option", async () => {
+    const { fetch, calls } = mockFetch(jsonResponse(accepted));
+    const result = await client(fetch).emailXRechnung(invoice, required, { syntax: "cii" });
+
+    expect(result.messageId).toBe("msg-1");
+    expect(calls[0]!.url).toBe("https://api.invoicexml.com/v1/create/xrechnung/email");
+    expect(JSON.parse(calls[0]!.init.body as string)).toEqual({ invoice, options: { syntax: "cii" }, email: required });
+  });
+
+  it("embeds with pdf and xml parts plus email fields, one part per copy address", async () => {
+    const { fetch, calls } = mockFetch(jsonResponse(accepted));
+    const result = await client(fetch).emailEmbeddedZugferd(PDF, XML, full);
+
+    expect(result).toEqual(accepted);
+    expect(calls[0]!.url).toBe("https://api.invoicexml.com/v1/embed/zugferd/email");
+    expect(headers(calls[0]!)["Content-Type"]).toBeUndefined();
+    const body = form(calls[0]!);
+    expect((body.get("pdf") as File).name).toBe("invoice.pdf");
+    expect((body.get("xml") as File).type).toBe("application/xml");
+    expect(body.get("email.from")).toBe(full.from);
+    expect(body.get("email.fromName")).toBe(full.fromName);
+    expect(body.get("email.to")).toBe(full.to);
+    expect(body.getAll("email.cc")).toEqual(full.cc);
+    expect(body.getAll("email.bcc")).toEqual(full.bcc);
+    expect(body.get("email.replyTo")).toBe(full.replyTo);
+    expect(body.get("email.subject")).toBe(full.subject);
+    expect(body.get("email.message")).toBe(full.message);
+  });
+
+  it("omits unset email fields from the form and never sends skipValidation", async () => {
+    const { fetch, calls } = mockFetch(jsonResponse(accepted));
+    await client(fetch).emailEmbeddedZugferd(PDF, XML, required);
+    const names: string[] = [];
+    form(calls[0]!).forEach((_, name) => names.push(name));
+    expect(names).toEqual(["pdf", "xml", "email.from", "email.to"]);
+  });
+
+  it("surfaces an unverified sender domain through InvoiceXmlError", async () => {
+    const problem = { title: "Sender domain not verified", status: 400, errorCode: 4022, errors: [], warnings: [] };
+    const { fetch, calls } = mockFetch(jsonResponse(problem, 400), jsonResponse(problem, 400));
+    const fromJson = await client(fetch).emailZugferd(invoice, required).catch((e: unknown) => e);
+    const fromForm = await client(fetch).emailEmbeddedZugferd(PDF, XML, required).catch((e: unknown) => e);
+
+    for (const error of [fromJson, fromForm]) {
+      expect(error).toBeInstanceOf(InvoiceXmlError);
+      expect((error as InvoiceXmlError).status).toBe(400);
+      expect((error as InvoiceXmlError).errorCode).toBe(4022);
+    }
+    expect(calls).toHaveLength(2);
+  });
+
+  it("retries a 429, which sent nothing, with the same form", async () => {
+    const { fetch, calls } = mockFetch(jsonResponse({}, 429, { "Retry-After": "0" }), jsonResponse(accepted));
+    const result = await client(fetch).emailEmbeddedZugferd(PDF, XML, required);
+
+    expect(result).toEqual(accepted);
+    expect(calls).toHaveLength(2);
+    expect(calls[1]!.init.body).toBe(calls[0]!.init.body);
+  });
+
+  it("does not resend after a 5xx, which could send a second email", async () => {
+    const { fetch, calls } = mockFetch(new Response("upstream unavailable", { status: 503 }));
+    await expect(client(fetch).emailZugferd(invoice, required)).rejects.toMatchObject({ status: 503 });
+    expect(calls).toHaveLength(1);
+  });
+
+  it("does not resend after a network failure, which could send a second email", async () => {
+    const { fetch, calls } = mockFetch();
+    await expect(client(fetch).emailEmbeddedZugferd(PDF, XML, required)).rejects.toThrow("Unexpected request");
+    expect(calls).toHaveLength(1);
+  });
+
+  it("skips null form fields, so subject null is not sent as the text null", async () => {
+    const { fetch, calls } = mockFetch(jsonResponse(accepted));
+    await client(fetch).emailEmbeddedZugferd(PDF, XML, { ...required, subject: null, cc: null } as unknown as EmailMessage);
+    const names: string[] = [];
+    form(calls[0]!).forEach((_, name) => names.push(name));
+    expect(names).toEqual(["pdf", "xml", "email.from", "email.to"]);
+  });
+
+  it.each(["from", "fromName", "to", "replyTo", "subject", "message"])(
+    "refuses a list in %s on both route types before sending",
+    async (field) => {
+      const { fetch, calls } = mockFetch();
+      const email = { ...required, [field]: ["one", "two"] } as unknown as EmailMessage;
+
+      await expect(client(fetch).emailZugferd(invoice, email)).rejects.toThrow(TypeError);
+      await expect(client(fetch).emailZugferd(invoice, email)).rejects.toThrow(`email.${field}`);
+      await expect(client(fetch).emailEmbeddedZugferd(PDF, XML, email)).rejects.toThrow(TypeError);
+      expect(calls).toHaveLength(0);
+    },
+  );
+
+  it("drops blank copy addresses and trims the rest on both route types", async () => {
+    const { fetch, calls } = mockFetch(jsonResponse(accepted), jsonResponse(accepted));
+    const email = { ...required, cc: [" ", " archiv@spreewerk-solutions.example "], bcc: [""] };
+
+    await client(fetch).emailZugferd(invoice, email);
+    await client(fetch).emailEmbeddedZugferd(PDF, XML, email);
+
+    expect(JSON.parse(calls[0]!.init.body as string).email).toEqual({
+      ...required,
+      cc: ["archiv@spreewerk-solutions.example"],
+    });
+    expect(form(calls[1]!).getAll("email.cc")).toEqual(["archiv@spreewerk-solutions.example"]);
+    expect(form(calls[1]!).has("email.bcc")).toBe(false);
+  });
+
+  it("turns a single copy address from a JavaScript caller into a list on both route types", async () => {
+    const { fetch, calls } = mockFetch(jsonResponse(accepted), jsonResponse(accepted));
+    const email = { ...required, cc: "archiv@spreewerk-solutions.example" } as unknown as EmailMessage;
+
+    await client(fetch).emailZugferd(invoice, email);
+    await client(fetch).emailEmbeddedZugferd(PDF, XML, email);
+
+    expect(JSON.parse(calls[0]!.init.body as string).email.cc).toEqual(["archiv@spreewerk-solutions.example"]);
+    expect(form(calls[1]!).getAll("email.cc")).toEqual(["archiv@spreewerk-solutions.example"]);
+  });
+
+  it("sends a non-ASCII subject and sender name as UTF-8 on the embed route", async () => {
+    const { fetch, calls } = mockFetch(jsonResponse(accepted));
+    await client(fetch).emailEmbeddedZugferd(PDF, XML, { ...required, fromName: "Müller & Söhne", subject: "Rechnung für März" });
+
+    const body = await new Response(form(calls[0]!)).text();
+    expect(body).toContain('name="email.fromName"\r\n\r\nMüller & Söhne\r\n');
+    expect(body).toContain('name="email.subject"\r\n\r\nRechnung für März\r\n');
+  });
+});
+
+describe("form fields", () => {
+  it("skips null values and keeps empty text on non-email routes", async () => {
+    const { fetch, calls } = mockFetch(new Response(PDF));
+    const options = { language: null, logoUrl: "" } as unknown as RenderOptions;
+    await client(fetch).renderXRechnungToPdf(XML, options);
+
+    const body = form(calls[0]!);
+    expect(body.has("language")).toBe(false);
+    expect(body.get("logoUrl")).toBe("");
   });
 });
 

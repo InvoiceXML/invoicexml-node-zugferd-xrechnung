@@ -36,7 +36,7 @@ You send net prices, quantities and VAT rates. The API computes the totals and t
 
 - **Rule sets updated on their legal effective dates.** New EN 16931, ZUGFeRD and KoSIT XRechnung releases go live server-side on the day they take effect. No package update, no redeploy.
 - **Validated before delivery.** Every document you create passes the XSD and Schematron rules before it leaves the API. A non-compliant invoice is refused with the violated rules, so it never reaches your customer.
-- **Zero data retention.** Invoices are processed in memory and returned in the same response. Nothing is stored and nothing is used for AI training.
+- **Zero data retention.** Invoices are processed in memory and returned in the same response. Nothing is stored and nothing is used for AI training. When you email an invoice, it goes to our email service for delivery, and we keep no copy.
 - **Processing in Frankfurt.** EU-only processing in Frankfurt, Germany, GDPR compliant by design.
 - **Integration assistance.** If a rule finding needs a human explanation, write to [support@invoicexml.com](mailto:support@invoicexml.com) and a person who knows the rule sets answers.
 
@@ -49,6 +49,9 @@ You send net prices, quantities and VAT rates. The API computes the totals and t
 | `validateZugferd(pdf)` | `POST /v1/validate/zugferd` | `ValidationResult` |
 | `validateXRechnung(xml)` | `POST /v1/validate/xrechnung` | `ValidationResult` |
 | `embedZugferd(pdf, xml, { skipValidation? })` | `POST /v1/embed/zugferd` | ZUGFeRD PDF/A-3 as `Uint8Array` |
+| `emailZugferd(invoice, email, options?)` | `POST /v1/create/zugferd/email` | `EmailSendResult` |
+| `emailXRechnung(invoice, email, options?)` | `POST /v1/create/xrechnung/email` | `EmailSendResult` |
+| `emailEmbeddedZugferd(pdf, xml, email)` | `POST /v1/embed/zugferd/email` | `EmailSendResult` |
 | `renderXRechnungToPdf(xml, { language?, logoUrl? })` | `POST /v1/render/xrechnung/to/pdf` | Readable PDF as `Uint8Array` |
 | `extractJson(file)` | `POST /v1/extract/json` | `{ invoice }`, ready to pass back to a create method |
 | `extractAttachments(file)` | `POST /v1/extract/attachments` | Supporting documents as a ZIP `Uint8Array` |
@@ -87,6 +90,31 @@ const xml = await client.createXRechnung({
   lines: [{ quantity: 95, unitCode: "HUR", item: { name: "Softwareentwicklung Fachverfahren" }, priceDetails: { netPrice: 110 }, vatInformation: { rate: 19, categoryCode: "S" } }],
 }, { syntax: "cii" });
 ```
+
+### Send an invoice by email
+
+Create or embed an invoice and email it to your customer in one call. It is built and validated exactly as on the plain method, and only an invoice that passes is sent, as a real email from your own address. The sender must be on a domain added and verified on the Verified email domains page of your dashboard. See the [email guide](https://www.invoicexml.com/docs/api/create/zugferd/email).
+
+```ts
+const { messageId } = await client.emailZugferd(invoice, {
+  from: "rechnung@spreewerk-solutions.de",
+  fromName: "Spreewerk Solutions",
+  to: "buchhaltung@main-handel.de",
+  cc: ["archiv@spreewerk-solutions.de"],
+  subject: "Rechnung RE-2026-1105",
+  message: "Guten Tag,\n\nanbei unsere Rechnung.",
+});
+```
+
+`emailXRechnung` takes the same `email` object and sends the XRechnung XML. `emailEmbeddedZugferd(pdf, xml, email)` packages your own PDF and CII XML first; it always validates, so it has no `skipValidation`.
+
+Only `from` and `to` are required. Left out, the subject is the document type and its number, and the message is a short English text. `cc` and `bcc` hold at most 2 addresses together.
+
+No file comes back: you get `{ status: "accepted", messageId }`. `accepted` means the email was handed over for delivery, not that the recipient's server has received it yet. Keep the `messageId` to ask about a delivery later. No copy of the invoice or of your subject and message is kept.
+
+Refused requests throw an `InvoiceXmlError` and send nothing. `errorCode` 4020 means your plan does not include email delivery ([pricing](https://www.invoicexml.com/pricing)), 4021 that email sending is disabled or paused for your account, and 4022 that the sender's domain is not verified yet. These three are not billed. Error 4002 lists a bad address, a sender domain that is not on your account or too many copies in `errors`.
+
+The client retries a 429 only, which sent nothing. A timeout, a network failure or a 503 with `errorCode` 4023, which can happen while the send is in flight, is never retried, because the email may already be on its way, so check before you send it again.
 
 ### Validation
 

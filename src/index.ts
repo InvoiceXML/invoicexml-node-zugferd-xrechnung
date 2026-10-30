@@ -2,6 +2,8 @@ export { ZugferdXRechnungClient } from "./client.js";
 export type { ClientOptions } from "./http.js";
 export { InvoiceXmlError, TooManyRequestsError } from "./errors.js";
 export type {
+  EmailMessage,
+  EmailSendResult,
   EmbedOptions,
   ExtractJsonResult,
   FileInput,
