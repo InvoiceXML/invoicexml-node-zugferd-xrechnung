@@ -2,6 +2,8 @@ export { ZugferdXRechnungClient } from "./client.js";
 export type { ClientOptions } from "./http.js";
 export { InvoiceXmlError, TooManyRequestsError } from "./errors.js";
 export type {
+  ConvertOptions,
+  ConvertToPdfOptions,
   EmailMessage,
   EmailSendResult,
   EmbedOptions,
@@ -14,6 +16,9 @@ export type {
   RenderOptions,
   ReportFinding,
   ReportRow,
+  TransformOptions,
+  ValidationReport,
+  ValidationReportOptions,
   ValidationResult,
   XRechnungOptions,
   ZugferdOptions,

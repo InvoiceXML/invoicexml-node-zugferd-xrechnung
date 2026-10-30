@@ -1,5 +1,7 @@
 import { Http, type ClientOptions } from "./http.js";
 import type {
+  ConvertOptions,
+  ConvertToPdfOptions,
   EmailMessage,
   EmailSendResult,
   EmbedOptions,
@@ -7,6 +9,9 @@ import type {
   FileInput,
   InvoiceDocument,
   RenderOptions,
+  TransformOptions,
+  ValidationReport,
+  ValidationReportOptions,
   ValidationResult,
   XRechnungOptions,
   ZugferdOptions,
@@ -57,6 +62,24 @@ export class ZugferdXRechnungClient {
   }
 
   /**
+   * Validates a ZUGFeRD PDF like `validateZugferd` and returns a printable PDF report
+   * with the verdict in `valid`. An invalid invoice is a normal result, not an error.
+   */
+  async validateZugferdReport(pdf: FileInput, options: ValidationReportOptions = {}): Promise<ValidationReport> {
+    const fields = { validationLanguage: options.validationLanguage };
+    return report(await this.http.postFiles("/v1/validate/zugferd/report", { file: pdf }, fields));
+  }
+
+  /**
+   * Validates an XRechnung XML like `validateXRechnung` and returns a printable PDF
+   * report with the verdict in `valid`. An invalid invoice is a normal result, not an error.
+   */
+  async validateXRechnungReport(xml: FileInput, options: ValidationReportOptions = {}): Promise<ValidationReport> {
+    const fields = { validationLanguage: options.validationLanguage };
+    return report(await this.http.postFiles("/v1/validate/xrechnung/report", { file: xml }, fields));
+  }
+
+  /**
    * Embeds an existing CII XML into an existing PDF and returns a ZUGFeRD PDF/A-3.
    * The XML is validated before embedding unless `skipValidation` is true.
    */
@@ -94,8 +117,92 @@ export class ZugferdXRechnungClient {
 
   /** Renders an XRechnung XML (UBL or CII) as a human-readable PDF. */
   async renderXRechnungToPdf(xml: FileInput, options: RenderOptions = {}): Promise<Uint8Array> {
-    const fields = { language: options.language, logoUrl: options.logoUrl };
-    return bytes(await this.http.postFiles("/v1/render/xrechnung/to/pdf", { file: xml }, fields));
+    return bytes(await this.http.postFiles("/v1/render/xrechnung/to/pdf", { file: xml }, renderFields(options)));
+  }
+
+  /** Renders a CII XML, such as the XML of a ZUGFeRD invoice, as a human-readable PDF. */
+  async renderCiiToPdf(xml: FileInput, options: RenderOptions = {}): Promise<Uint8Array> {
+    return bytes(await this.http.postFiles("/v1/render/cii/to/pdf", { file: xml }, renderFields(options)));
+  }
+
+  /** Converts a ZUGFeRD PDF into UBL XML. */
+  async convertZugferdToUbl(pdf: FileInput, options: ConvertOptions = {}): Promise<string> {
+    return this.convertToXml("/v1/convert/zugferd/to/ubl", pdf, options);
+  }
+
+  /** Converts a ZUGFeRD PDF into CII XML. */
+  async convertZugferdToCii(pdf: FileInput, options: ConvertOptions = {}): Promise<string> {
+    return this.convertToXml("/v1/convert/zugferd/to/cii", pdf, options);
+  }
+
+  /** Converts an XRechnung XML (UBL or CII) into plain EN 16931 UBL XML. */
+  async convertXRechnungToUbl(xml: FileInput, options: ConvertOptions = {}): Promise<string> {
+    return this.convertToXml("/v1/convert/xrechnung/to/ubl", xml, options);
+  }
+
+  /** Converts an XRechnung XML (UBL or CII) into plain EN 16931 CII XML. */
+  async convertXRechnungToCii(xml: FileInput, options: ConvertOptions = {}): Promise<string> {
+    return this.convertToXml("/v1/convert/xrechnung/to/cii", xml, options);
+  }
+
+  /** Converts a UBL XML into an XRechnung XML in UBL syntax. */
+  async convertUblToXRechnung(xml: FileInput, options: ConvertOptions = {}): Promise<string> {
+    return this.convertToXml("/v1/convert/ubl/to/xrechnung", xml, options);
+  }
+
+  /** Converts a CII XML into an XRechnung XML in UBL syntax. */
+  async convertCiiToXRechnung(xml: FileInput, options: ConvertOptions = {}): Promise<string> {
+    return this.convertToXml("/v1/convert/cii/to/xrechnung", xml, options);
+  }
+
+  /** Converts a CII XML into a ZUGFeRD PDF/A-3 with a PDF rendered from the invoice. */
+  async convertCiiToZugferd(xml: FileInput, options: ConvertToPdfOptions = {}): Promise<Uint8Array> {
+    return this.convertToPdf("/v1/convert/cii/to/zugferd", xml, options);
+  }
+
+  /** Converts a UBL XML into a ZUGFeRD PDF/A-3 with a PDF rendered from the invoice. */
+  async convertUblToZugferd(xml: FileInput, options: ConvertToPdfOptions = {}): Promise<Uint8Array> {
+    return this.convertToPdf("/v1/convert/ubl/to/zugferd", xml, options);
+  }
+
+  /** Converts an XRechnung XML (UBL or CII) into a ZUGFeRD PDF/A-3 with a PDF rendered from the invoice. */
+  async convertXRechnungToZugferd(xml: FileInput, options: ConvertToPdfOptions = {}): Promise<Uint8Array> {
+    return this.convertToPdf("/v1/convert/xrechnung/to/zugferd", xml, options);
+  }
+
+  /**
+   * Reads a PDF invoice and returns a ZUGFeRD PDF/A-3. AI reads the PDF, so a person
+   * must check the result before it is used. Throws an `InvoiceXmlError` with the
+   * violated rules in `errors` when the data read would not be compliant. A 429 on this
+   * method is not retried automatically, so wait for `Retry-After` before calling again
+   * if you want to retry.
+   */
+  async transformToZugferd(pdf: FileInput, options: TransformOptions = {}): Promise<Uint8Array> {
+    const fields = {
+      language: options.language,
+      preserveOriginalPdf: options.preserveOriginalPdf,
+      includeAdvancedProperties: options.includeAdvancedProperties,
+      validationLanguage: options.validationLanguage,
+    };
+    return bytes(await this.http.postFiles("/v1/transform/to/zugferd", { file: pdf }, fields, { retryRateLimit: false }));
+  }
+
+  /**
+   * Reads a PDF invoice and returns an XRechnung XML in UBL syntax. AI reads the PDF,
+   * so a person must check the result before it is used. `buyerReference` is the
+   * Leitweg-ID and replaces any reference found in the PDF. Throws an `InvoiceXmlError`
+   * with the violated rules in `errors` when the data read would not be compliant. A 429
+   * on this method is not retried automatically, so wait for `Retry-After` before calling
+   * again if you want to retry.
+   */
+  async transformToXRechnung(
+    pdf: FileInput,
+    buyerReference: string,
+    options: Pick<TransformOptions, "validationLanguage"> = {},
+  ): Promise<string> {
+    if (!buyerReference?.trim()) throw new TypeError("A buyerReference is required.");
+    const fields = { buyerReference, validationLanguage: options.validationLanguage };
+    return (await this.http.postFiles("/v1/transform/to/xrechnung", { file: pdf }, fields, { retryRateLimit: false })).text();
   }
 
   /**
@@ -110,6 +217,20 @@ export class ZugferdXRechnungClient {
   async extractAttachments(file: FileInput): Promise<Uint8Array> {
     return bytes(await this.http.postFiles("/v1/extract/attachments", { file }));
   }
+
+  private async convertToXml(path: string, file: FileInput, options: ConvertOptions): Promise<string> {
+    const fields = { validationLanguage: options.validationLanguage };
+    return (await this.http.postFiles(path, { file }, fields)).text();
+  }
+
+  private async convertToPdf(path: string, file: FileInput, options: ConvertToPdfOptions): Promise<Uint8Array> {
+    const fields = { language: options.language, validationLanguage: options.validationLanguage };
+    return bytes(await this.http.postFiles(path, { file }, fields));
+  }
+}
+
+function renderFields(options: RenderOptions) {
+  return { language: options.language, logoUrl: options.logoUrl, includeQrCode: options.includeQrCode };
 }
 
 const SINGLE_VALUE_EMAIL_FIELDS = ["from", "fromName", "to", "replyTo", "subject", "message"] as const;
@@ -156,4 +277,9 @@ async function bytes(response: Response): Promise<Uint8Array> {
 
 async function json<T>(response: Response): Promise<T> {
   return (await response.json()) as T;
+}
+
+async function report(response: Response): Promise<ValidationReport> {
+  const verdict = response.headers.get("X-Invoice-Valid");
+  return { file: await bytes(response), valid: verdict === "true" ? true : verdict === "false" ? false : null };
 }
