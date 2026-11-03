@@ -4,7 +4,7 @@
 [![tests](https://github.com/InvoiceXML/invoicexml-node-zugferd-xrechnung/actions/workflows/tests.yml/badge.svg)](https://github.com/InvoiceXML/invoicexml-node-zugferd-xrechnung/actions/workflows/tests.yml)
 [![license](https://img.shields.io/npm/l/@invoicexml/zugferd-xrechnung)](LICENSE)
 
-Create, validate, embed, render and extract German e-invoices from Node.js and TypeScript: **ZUGFeRD** hybrid PDF/A-3 for B2B and **XRechnung** XML for the public sector, both EN 16931 compliant. A thin, typed client for the [InvoiceXML API](https://www.invoicexml.com) with zero runtime dependencies.
+Create, validate, embed, render and extract German e-invoices from Node.js and TypeScript: **ZUGFeRD** hybrid PDF/A-3 for B2B and **XRechnung** XML for the public sector, both EN 16931 compliant. It also reads PDF invoices, typed or scanned, into invoice data. A thin, typed client for the [InvoiceXML API](https://www.invoicexml.com) with zero runtime dependencies.
 
 ```bash
 npm install @invoicexml/zugferd-xrechnung
@@ -46,8 +46,8 @@ You send net prices, quantities and VAT rates. The API computes the totals and t
 | --- | --- | --- |
 | `createZugferd(invoice, options?)` | `POST /v1/create/zugferd` | ZUGFeRD PDF/A-3 as `Uint8Array` |
 | `createXRechnung(invoice, options?)` | `POST /v1/create/xrechnung` | XRechnung XML as `string` |
-| `createCii(invoice, { language? })` | [`POST /v1/create/cii`](https://www.invoicexml.com/docs/api/create/cii) | CII XML as `string`, ready for `embedZugferd` |
-| `createUbl(invoice, { profile?, language? })` | [`POST /v1/create/ubl`](https://www.invoicexml.com/docs/api/create/ubl) | UBL XML as `string` |
+| `createCii(invoice, { language? })` | `POST /v1/create/cii` | CII XML as `string`, ready for `embedZugferd` |
+| `createUbl(invoice, { profile?, language? })` | `POST /v1/create/ubl` | UBL XML as `string` |
 | `validateZugferd(pdf)` | `POST /v1/validate/zugferd` | `ValidationResult` |
 | `validateXRechnung(xml)` | `POST /v1/validate/xrechnung` | `ValidationResult` |
 | `validateZugferdReport(pdf, { validationLanguage? })` | `POST /v1/validate/zugferd/report` | `ValidationReport`: the PDF report in `file`, the verdict in `valid` |
@@ -56,8 +56,7 @@ You send net prices, quantities and VAT rates. The API computes the totals and t
 | `emailZugferd(invoice, email, options?)` | `POST /v1/create/zugferd/email` | `EmailSendResult` |
 | `emailXRechnung(invoice, email, options?)` | `POST /v1/create/xrechnung/email` | `EmailSendResult` |
 | `emailEmbeddedZugferd(pdf, xml, email)` | `POST /v1/embed/zugferd/email` | `EmailSendResult` |
-| `renderXRechnungToPdf(xml, { language?, logoUrl?, includeQrCode? })` | `POST /v1/render/xrechnung/to/pdf` | Readable PDF as `Uint8Array` |
-| `renderCiiToPdf(xml, { language?, logoUrl?, includeQrCode? })` | `POST /v1/render/cii/to/pdf` | Readable PDF as `Uint8Array` |
+| `renderXmlToPdf(xml, { language?, logoUrl?, includeQrCode? })` | `POST /v1/render/xml/to/pdf` | Readable PDF as `Uint8Array` |
 | `convertZugferdToUbl(pdf, { validationLanguage? })` | `POST /v1/convert/zugferd/to/ubl` | UBL XML as `string` |
 | `convertZugferdToCii(pdf, { validationLanguage? })` | `POST /v1/convert/zugferd/to/cii` | CII XML as `string` |
 | `convertXRechnungToUbl(xml, { validationLanguage? })` | `POST /v1/convert/xrechnung/to/ubl` | UBL XML as `string` |
@@ -71,6 +70,7 @@ You send net prices, quantities and VAT rates. The API computes the totals and t
 | `transformToXRechnung(pdf, buyerReference, { validationLanguage? })` | `POST /v1/transform/to/xrechnung` | XRechnung XML as `string`, to be checked by a person |
 | `extractJson(file)` | `POST /v1/extract/json` | `{ invoice }`, ready to pass back to a create method |
 | `extractAttachments(file)` | `POST /v1/extract/attachments` | Supporting documents as a ZIP `Uint8Array` |
+| `parseJson(pdf)` | `POST /v1/parse/json` | `ParsedInvoice`: `{ invoice, confidence?, language? }`, to be checked by a person |
 
 Files can be a `Buffer`, `Uint8Array`, `ArrayBuffer`, `Blob` or `File`, or the XML as a string. PDF and XML are detected from the content.
 
@@ -172,10 +172,10 @@ if (valid === false) console.log("The invoice is not compliant, see the report."
 
 ### Render
 
-`renderXRechnungToPdf` and `renderCiiToPdf` turn an invoice XML into a readable PDF. Both accept `language` (`"EN"`, `"DE"` or `"FR"`), `logoUrl` and `includeQrCode`, which prints the payment QR code (GiroCode). See the [XRechnung](https://www.invoicexml.com/docs/api/render/xrechnung/to/pdf) and [CII](https://www.invoicexml.com/docs/api/render/cii/to/pdf) reference.
+`renderXmlToPdf` turns any invoice XML, XRechnung, CII (such as the XML of a ZUGFeRD invoice) or UBL, into a readable PDF; the format is detected from the XML. It accepts `language` (`"EN"`, `"DE"` or `"FR"`), `logoUrl` and `includeQrCode`, which prints the payment QR code (GiroCode). See the [reference](https://www.invoicexml.com/docs/api/render/xml/to/pdf).
 
 ```ts
-const pdf = await client.renderXRechnungToPdf(await readFile("rechnung.xml"), { language: "DE", includeQrCode: true });
+const pdf = await client.renderXmlToPdf(await readFile("rechnung.xml"), { language: "DE", includeQrCode: true });
 ```
 
 ### Convert
@@ -199,6 +199,15 @@ Every route has a reference page, for example [ZUGFeRD to UBL](https://www.invoi
 
 `transformToZugferd` accepts `language` (`"EN"`, `"DE"`, `"FR"` or `"auto"`, the default), `preserveOriginalPdf`, `includeAdvancedProperties` (on by default, so the data read can be checked on the pages) and `validationLanguage`. `transformToXRechnung` needs the Leitweg-ID in `buyerReference`. A 429 on these methods is not retried automatically, so wait for `Retry-After` before calling again if you want to retry. See the [ZUGFeRD](https://www.invoicexml.com/docs/api/transform/to/zugferd) and [XRechnung](https://www.invoicexml.com/docs/api/transform/to/xrechnung) reference.
 
+### Read a PDF invoice with AI
+
+`parseJson(pdf)` reads any PDF invoice, typed, scanned or photographed, into the invoice object, with a `confidence` score from 0 to 1 and the invoice's `language` (any language, so not always a valid `language` option of the other methods). AI reads the PDF, so a person must check the data before it is used; XML embedded in the PDF is ignored, use `extractJson` for that. A 429 on this method is not retried automatically. See the [reference](https://www.invoicexml.com/docs/api/parse/json).
+
+```ts
+const { invoice, confidence } = await client.parseJson(await readFile("rechnung-scan.pdf"));
+console.log(invoice.invoiceNumber, confidence?.overall);
+```
+
 ### Errors and rate limits
 
 Failed requests throw an `InvoiceXmlError` with `status`, `title`, `detail`, a numeric `errorCode` ([error codes](https://www.invoicexml.com/docs/error-handling)) and a `traceId` to quote when contacting support. When a create or embed request is refused because the invoice would not be compliant, `errors` lists the violated rules:
@@ -215,7 +224,7 @@ try {
 }
 ```
 
-On HTTP 429 every call except transform waits for the `Retry-After` delay and retries, up to `maxRetries` times (default 3). After that it throws a `TooManyRequestsError` with `retryAfter` in seconds. A 429 is not billed.
+On HTTP 429 every call except transform and parse waits for the `Retry-After` delay and retries, up to `maxRetries` times (default 3). After that it throws a `TooManyRequestsError` with `retryAfter` in seconds. A 429 is not billed.
 
 ### Client options
 
@@ -229,6 +238,10 @@ new ZugferdXRechnungClient({
 ```
 
 Keep the API key on the server. Never call the API from browser code, where the key would be visible to anyone.
+
+## Examples
+
+The [examples](examples) folder holds small scripts that each show one common task from start to finish: creating a ZUGFeRD invoice with your own PDF, creating a CII XML and embedding it, emailing an invoice or your own PDF, validating, rendering, converting, transforming a PDF invoice, reading a PDF invoice with AI and reading e-invoices. See the [examples overview](examples/README.md) for the list and how to run them.
 
 ## Links
 

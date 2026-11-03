@@ -9,6 +9,7 @@ import type {
   ExtractJsonResult,
   FileInput,
   InvoiceDocument,
+  ParsedInvoice,
   RenderOptions,
   TransformOptions,
   UblOptions,
@@ -136,14 +137,13 @@ export class ZugferdXRechnungClient {
     return json(await this.http.postFiles("/v1/embed/zugferd/email", { pdf, xml }, emailFields(email)));
   }
 
-  /** Renders an XRechnung XML (UBL or CII) as a human-readable PDF. */
-  async renderXRechnungToPdf(xml: FileInput, options: RenderOptions = {}): Promise<Uint8Array> {
-    return bytes(await this.http.postFiles("/v1/render/xrechnung/to/pdf", { file: xml }, renderFields(options)));
-  }
-
-  /** Renders a CII XML, such as the XML of a ZUGFeRD invoice, as a human-readable PDF. */
-  async renderCiiToPdf(xml: FileInput, options: RenderOptions = {}): Promise<Uint8Array> {
-    return bytes(await this.http.postFiles("/v1/render/cii/to/pdf", { file: xml }, renderFields(options)));
+  /**
+   * Renders any invoice XML as a human-readable PDF: XRechnung (UBL or CII), CII (such
+   * as the XML of a ZUGFeRD invoice) or UBL. The format is detected from the XML.
+   */
+  async renderXmlToPdf(xml: FileInput, options: RenderOptions = {}): Promise<Uint8Array> {
+    const fields = { language: options.language, logoUrl: options.logoUrl, includeQrCode: options.includeQrCode };
+    return bytes(await this.http.postFiles("/v1/render/xml/to/pdf", { file: xml }, fields));
   }
 
   /** Converts a ZUGFeRD PDF into UBL XML. */
@@ -234,6 +234,18 @@ export class ZugferdXRechnungClient {
     return json(await this.http.postFiles("/v1/extract/json", { file }));
   }
 
+  /**
+   * Reads `pdf`, a PDF invoice (typed, scanned or photographed), into invoice data.
+   * AI reads the PDF, so a person must check the data before it is used. XML embedded
+   * in the PDF is ignored: use `extractJson` to read it. `confidence` scores the read
+   * from 0.0 (had to guess) to 1.0 (unambiguous) and `language` is the ISO 639-1 code
+   * of the invoice's language; both can be absent. A 429 on this method is not retried
+   * automatically, so wait for `Retry-After` before calling again if you want to retry.
+   */
+  async parseJson(pdf: FileInput): Promise<ParsedInvoice> {
+    return json(await this.http.postFiles("/v1/parse/json", { file: pdf }, {}, { retryRateLimit: false }));
+  }
+
   /** Extracts the supporting documents attached to an invoice as a ZIP archive. */
   async extractAttachments(file: FileInput): Promise<Uint8Array> {
     return bytes(await this.http.postFiles("/v1/extract/attachments", { file }));
@@ -248,10 +260,6 @@ export class ZugferdXRechnungClient {
     const fields = { language: options.language, validationLanguage: options.validationLanguage };
     return bytes(await this.http.postFiles(path, { file }, fields));
   }
-}
-
-function renderFields(options: RenderOptions) {
-  return { language: options.language, logoUrl: options.logoUrl, includeQrCode: options.includeQrCode };
 }
 
 const SINGLE_VALUE_EMAIL_FIELDS = ["from", "fromName", "to", "replyTo", "subject", "message"] as const;

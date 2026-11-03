@@ -1,7 +1,7 @@
 {
   "name": "@invoicexml/zugferd-xrechnung",
-  "version": "1.3.0",
-  "description": "Create, validate, embed, render and extract ZUGFeRD and XRechnung e-invoices (EN 16931) from Node.js and TypeScript with the InvoiceXML API.",
+  "version": "1.4.0",
+  "description": "Create, validate, embed, render and extract ZUGFeRD and XRechnung e-invoices (EN 16931) and read PDF invoices from Node.js and TypeScript with the InvoiceXML API.",
   "keywords": [
     "zugferd",
     "xrechnung",
