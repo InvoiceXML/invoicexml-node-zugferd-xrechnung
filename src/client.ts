@@ -1,5 +1,6 @@
 import { Http, type ClientOptions } from "./http.js";
 import type {
+  CiiOptions,
   ConvertOptions,
   ConvertToPdfOptions,
   EmailMessage,
@@ -10,6 +11,7 @@ import type {
   InvoiceDocument,
   RenderOptions,
   TransformOptions,
+  UblOptions,
   ValidationReport,
   ValidationReportOptions,
   ValidationResult,
@@ -49,6 +51,25 @@ export class ZugferdXRechnungClient {
    */
   async createXRechnung(invoice: InvoiceDocument, options?: XRechnungOptions): Promise<string> {
     return (await this.http.postJson("/v1/create/xrechnung", invoice, options)).text();
+  }
+
+  /**
+   * Creates a plain UN/CEFACT CII XML invoice with the EN 16931 guideline ID, ready
+   * to pass to `embedZugferd` together with your own PDF. Throws an `InvoiceXmlError`
+   * with the violated rules in `errors` when the invoice would not be compliant.
+   */
+  async createCii(invoice: InvoiceDocument, options?: CiiOptions): Promise<string> {
+    return (await this.http.postJson("/v1/create/cii", invoice, options)).text();
+  }
+
+  /**
+   * Creates a UBL XML invoice. `profile` picks the CustomizationID and the rule set
+   * the invoice is validated against; "peppol-bis-3" is the default. Throws an
+   * `InvoiceXmlError` with the violated rules in `errors` when the invoice would not
+   * be compliant.
+   */
+  async createUbl(invoice: InvoiceDocument, options?: UblOptions): Promise<string> {
+    return (await this.http.postJson("/v1/create/ubl", invoice, options)).text();
   }
 
   /** Validates a ZUGFeRD PDF against the rule set of the profile its embedded XML declares. */

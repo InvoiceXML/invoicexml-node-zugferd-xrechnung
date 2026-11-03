@@ -46,6 +46,8 @@ You send net prices, quantities and VAT rates. The API computes the totals and t
 | --- | --- | --- |
 | `createZugferd(invoice, options?)` | `POST /v1/create/zugferd` | ZUGFeRD PDF/A-3 as `Uint8Array` |
 | `createXRechnung(invoice, options?)` | `POST /v1/create/xrechnung` | XRechnung XML as `string` |
+| `createCii(invoice, { language? })` | [`POST /v1/create/cii`](https://www.invoicexml.com/docs/api/create/cii) | CII XML as `string`, ready for `embedZugferd` |
+| `createUbl(invoice, { profile?, language? })` | [`POST /v1/create/ubl`](https://www.invoicexml.com/docs/api/create/ubl) | UBL XML as `string` |
 | `validateZugferd(pdf)` | `POST /v1/validate/zugferd` | `ValidationResult` |
 | `validateXRechnung(xml)` | `POST /v1/validate/xrechnung` | `ValidationResult` |
 | `validateZugferdReport(pdf, { validationLanguage? })` | `POST /v1/validate/zugferd/report` | `ValidationReport`: the PDF report in `file`, the verdict in `valid` |
@@ -79,6 +81,23 @@ The `InvoiceDocument` type is generated from the [OpenAPI schema](https://api.in
 `createZugferd` accepts `language` (`"EN"`, `"DE"` or `"FR"`), `brandColor` (`"#RRGGBB"`), `logoUrl`, `pdfUrl` (your own PDF as the visual layer) and `includeAdvancedProperties`.
 
 `createXRechnung` accepts `syntax` (`"ubl"`, the default, or `"cii"`) and `language`.
+
+### Your own PDF layout
+
+To keep the PDF your own system already produces, create the CII XML from the invoice and embed it into that PDF. `createCii` accepts `language`, and its XML goes straight into `embedZugferd`. See the [reference](https://www.invoicexml.com/docs/api/create/cii).
+
+```ts
+const xml = await client.createCii(invoice, { language: "DE" });
+await writeFile("rechnung.pdf", await client.embedZugferd(await readFile("meine-rechnung.pdf"), xml));
+```
+
+### Create a UBL invoice
+
+`createUbl` builds a UBL XML from the same invoice object, with `profile` choosing the rule set (`"peppol-bis-3"` by default, also `"en16931"`, `"nlcius"`, `"ehf"`, `"xrechnung"` and `"pint"`). See the [reference](https://www.invoicexml.com/docs/api/create/ubl).
+
+```ts
+const ubl = await client.createUbl(invoice, { profile: "peppol-bis-3" });
+```
 
 ### XRechnung
 

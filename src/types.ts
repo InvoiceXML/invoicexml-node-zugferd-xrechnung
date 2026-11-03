@@ -31,6 +31,26 @@ export interface XRechnungOptions {
   language?: Options["language"];
 }
 
+/** Options for `createCii`. All optional. */
+export interface CiiOptions {
+  /** Language of the default texts the API fills in when you leave them empty: "EN" (default), "DE" or "FR". */
+  language?: Options["language"];
+}
+
+/**
+ * UBL profile of `createUbl`, sent as given. It picks the CustomizationID stamped
+ * into the XML and the rule set the invoice is validated against.
+ */
+export type UblProfile = "en16931" | "peppol-bis-3" | "nlcius" | "ehf" | "xrechnung" | "pint";
+
+/** Options for `createUbl`. All optional. */
+export interface UblOptions {
+  /** UBL profile: "peppol-bis-3" (default), "en16931", "nlcius", "ehf", "xrechnung" or "pint". */
+  profile?: UblProfile;
+  /** Language of the default texts the API fills in when you leave them empty: "EN" (default), "DE" or "FR". */
+  language?: Options["language"];
+}
+
 /** Options for `embedZugferd`. */
 export interface EmbedOptions {
   /** Only package the XML, without business-rule validation. Defaults to false. */
